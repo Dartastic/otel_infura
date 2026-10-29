@@ -1,15 +1,16 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_infura_suppression.dart';
 
 const _tracerName = 'dartastic_otel_libs_infura';
 
-Tracer _tracer() => OTel.tracerProvider().getTracer(_tracerName);
+APITracer _tracer() => OTelAPI.tracerProvider().getTracer(_tracerName);
 
 class InfuraResult {
+  /// Creates a result.
   const InfuraResult({
     this.network,
     this.chainId,
@@ -66,8 +67,13 @@ class InfuraResult {
   final int? statusCode;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class InfuraCallResult<T> {
+  /// Creates a call result.
   const InfuraCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final InfuraResult? result;
 }
@@ -95,7 +101,7 @@ Future<T> tracedInfura<T>({
   final span = _tracer().startSpan(
     'infura $operation',
     kind: SpanKind.client,
-    attributes: OTel.attributesFromMap(m),
+    attributes: OTelAPI.attributesFromMap(m),
   );
   try {
     final r = await invoke();
@@ -103,71 +109,72 @@ Future<T> tracedInfura<T>({
       final res = r.result!;
       final extras = <Attribute<Object>>[];
       if (res.network != null) {
-        extras.add(OTel.attributeString('infura.network', res.network!));
+        extras.add(OTelAPI.attributeString('infura.network', res.network!));
       }
       if (res.chainId != null) {
-        extras.add(OTel.attributeString('infura.chain.id', res.chainId!));
+        extras.add(OTelAPI.attributeString('infura.chain.id', res.chainId!));
       }
       if (res.rpcMethod != null) {
-        extras.add(OTel.attributeString('infura.rpc.method', res.rpcMethod!));
+        extras
+            .add(OTelAPI.attributeString('infura.rpc.method', res.rpcMethod!));
       }
       if (res.batchSize != null) {
-        extras.add(OTel.attributeInt('infura.batch.size', res.batchSize!));
+        extras.add(OTelAPI.attributeInt('infura.batch.size', res.batchSize!));
       }
       if (res.creditsUsed != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'infura.credits.used',
           res.creditsUsed!,
         ));
       }
       if (res.responseBytes != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'infura.response.bytes',
           res.responseBytes!,
         ));
       }
       if (res.blockNumber != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'infura.block.number',
           res.blockNumber!,
         ));
       }
       if (res.ipfsKind != null) {
-        extras.add(OTel.attributeString('infura.ipfs.kind', res.ipfsKind!));
+        extras.add(OTelAPI.attributeString('infura.ipfs.kind', res.ipfsKind!));
       }
       if (res.ipfsCid != null) {
-        extras.add(OTel.attributeString('infura.ipfs.cid', res.ipfsCid!));
+        extras.add(OTelAPI.attributeString('infura.ipfs.cid', res.ipfsCid!));
       }
       if (res.ipfsSizeBytes != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'infura.ipfs.size_bytes',
           res.ipfsSizeBytes!,
         ));
       }
       if (res.archive != null) {
-        extras.add(OTel.attributeBool('infura.archive', res.archive!));
+        extras.add(OTelAPI.attributeBool('infura.archive', res.archive!));
       }
       if (res.rateLimitRemaining != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'infura.rate_limit.remaining',
           res.rateLimitRemaining!,
         ));
       }
       if (res.errorCode != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'infura.error.code',
           res.errorCode!,
         ));
         span.setStatus(SpanStatusCode.Error, 'Infura ${res.errorCode}');
       }
       if (res.errorMessage != null) {
-        extras.add(OTel.attributeString(
+        extras.add(OTelAPI.attributeString(
           'infura.error.message',
           res.errorMessage!,
         ));
       }
       if (res.statusCode != null) {
-        extras.add(OTel.attributeInt(
+        extras.add(OTelAPI.attributeInt(
           'http.response.status_code',
           res.statusCode!,
         ));
@@ -178,13 +185,13 @@ Future<T> tracedInfura<T>({
           );
         }
       }
-      if (extras.isNotEmpty) span.addAttributes(OTel.attributes(extras));
+      if (extras.isNotEmpty) span.addAttributes(OTelAPI.attributes(extras));
     }
     return r.value;
   } catch (e, st) {
-    span.addAttributes(OTel.attributes([
-      OTel.attributeString(
-        ErrorResource.errorType.key,
+    span.addAttributes(OTelAPI.attributes([
+      OTelAPI.attributeString(
+        ErrorAttributes.errorType.key,
         e.runtimeType.toString(),
       ),
     ]));
